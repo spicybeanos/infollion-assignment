@@ -1,6 +1,8 @@
 var express = require('express');
+var {getPassHash} = require("../database")
+
 var router = express.Router();
-import { getPassHash } from '../database'
+// import { getPassHash } from '../database.js'
 
 const bcrypt = require('bcrypt');
 const saltRounds = 10;

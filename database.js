@@ -1,16 +1,25 @@
-import 'dotenv/config';
+const pgp = require('pg-promise')(/* options */)
 
 const dbUser = process.env.DB_USER;
 const dbPass = process.env.DB_PASS;
-
-const pgp = require('pg-promise')(/* options */)
 const db = pgp(`postgres://${dbUser}:${dbPass}@host:5432/database`)
 
-export async function selectToken(token){
-    await db.any('SELECT * FROM token WHERE session_token = $1',[token])
+async function selectToken(token) {
+    await db.any('SELECT * FROM token WHERE session_token = $1', [token])
 }
-
-export async function getPassHash(username) {
+async function addCred(username, passhash) {
+    try {
+        await db.none(
+            'INSERT INTO creds (username, passhash) VALUES ($1, $2)',
+            [username, passhash]
+        );
+        console.log('Credentials added successfully');
+    } catch (err) {
+        console.error('Error inserting credentials:', err);
+        throw err;
+    }
+}
+async function getPassHash(username) {
     try {
         const result = await db.oneOrNone(
             'SELECT passhash FROM creds WHERE username = $1',
@@ -27,4 +36,8 @@ export async function getPassHash(username) {
         console.error('Error fetching passhash:', err);
         throw err;
     }
+}
+
+module.exports = {
+    getPassHash,addCred
 }
