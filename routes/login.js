@@ -1,15 +1,30 @@
 var express = require('express');
-var {getPassHash} = require("../database")
+var { deleteTokenBySession } = require("../database");
+const { Console } = require('console');
 
 var router = express.Router();
 // import { getPassHash } from '../database.js'
 
-const bcrypt = require('bcrypt');
-const saltRounds = 10;
+router.delete('/', async function (req, res, next) {
+  try {
+    let token = req.headers.authorization;
 
-async function hashPassword(password) {
-  return await bcrypt.hash(password, saltRounds);
-}
+    if(token == null || token == undefined){
+      res.status(400).send("No token provided.");
+      return;
+    }
+    token = token.replace(" ","")
+    token = token.replace("Bearer","")
+    await deleteTokenBySession(token);
+    res.status(200).send("Logged out.")
+    return;
+  } 
+  catch (ex) {
+    console.log(`Failed to logout : ${ex}`)
+    res.status(500).send("Failed to logout.");
+    return;
+  }
+})
 
 router.post('/', async function (req, res, next) {
   try {
@@ -18,19 +33,33 @@ router.post('/', async function (req, res, next) {
     const hash = await getPassHash(username);
 
     if (hash == null) {
-      res.send("Invalid username").status(404);
+      res.status(404)
+      send("Invalid username");
+      return
     }
 
     const result = bcrypt.compare(password, hash)
     if (result) {
-      res.send("loddeg in successfully").status(200)
+      const token = require('crypto').randomBytes(64).toString('hex');
+      let expiry = new Date();
+      console.log(`now : ${expiry.toISOString()}`)
+      expiry = new Date(expiry.getTime() + 1000 * 3600 * 3);
+      console.log(`expiry date time : ${expiry.toISOString()}`)
+      await upsertToken(username, token, expiry.toISOString())
+
+      res.status(200).send(JSON.stringify({ token: token }));
+      return
     } else {
-      res.send("Invalid username/password").status(400);
+      res.status(400)
+      send("Invalid username/password");
+      return
     }
   }
   catch (ex) {
     console.log(`Failed to log in: ${ex}`)
-    res.send("failed to log in").status(500);
+    res.status(500);
+    res.send("failed to log in");
+    return
   }
 });
 
