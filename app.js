@@ -1,14 +1,17 @@
-require('dotenv').config(); 
+require('dotenv').config();
 var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+var { validateToken } = require('./validate.js')
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var loginRouter = require('./routes/login');
 var signUpRouter = require('./routes/signup');
+var balanceRouter = require('./routes/balance');
+var transferRouter = require('./routes/transfer');
 
 var app = express();
 
@@ -26,14 +29,43 @@ app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/login', loginRouter);
 app.use('/signup', signUpRouter);
+app.use('/balance', async (req, res, next) => {
+  if (req.headers.authorization === undefined) {
+    res.status(403).send("Unauthorized");
+    return;
+  }
+  const auth = req.headers.authorization.split(' ')[1];
+  const valid = await validateToken(auth);
+
+  if (!valid) {
+    res.status(403).send("Invalid token");
+    return;
+  }
+  next();
+}, balanceRouter);
+
+app.use('/transfer', async (req, res, next) => {
+  if (req.headers.authorization === undefined) {
+    res.status(403).send("Unauthorized");
+    return;
+  }
+  const auth = req.headers.authorization.split(' ')[1];
+  const valid = await validateToken(auth);
+
+  if (!valid) {
+    res.status(403).send("Invalid token");
+    return;
+  }
+  next();
+}, transferRouter);
 
 // catch 404 and forward to error handler
-app.use(function(req, res, next) {
+app.use(function (req, res, next) {
   next(createError(404));
 });
 
 // error handler
-app.use(function(err, req, res, next) {
+app.use(function (err, req, res, next) {
   // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
