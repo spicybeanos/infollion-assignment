@@ -5,59 +5,59 @@ const dbPass = process.env.DB_PASS;
 const db = pgp(`postgres://${dbUser}:${dbPass}@localhost:5432`)
 
 async function selectToken(token) {
-    await db.any('SELECT * FROM token WHERE session_token = $1', [token])
+  await db.any('SELECT * FROM token WHERE session_token = $1', [token])
 }
 async function addCred(username, passhash) {
-    try {
-        await db.none(
-            'INSERT INTO creds (username, passhash) VALUES ($1, $2)',
-            [username, passhash]
-        );
-        console.log('Credentials added successfully');
-    } catch (err) {
-        console.error('Error inserting credentials:', err);
-        throw err;
-    }
+  try {
+    await db.none(
+      'INSERT INTO creds (username, passhash) VALUES ($1, $2)',
+      [username, passhash]
+    );
+    console.log('Credentials added successfully');
+  } catch (err) {
+    console.error('Error inserting credentials:', err);
+    throw err;
+  }
 }
 
 async function addUser(name, email, username, phone) {
-    try {
-        const query = `
+  try {
+    const query = `
       INSERT INTO users (name, email, username, phone)
       VALUES ($1, $2, $3, $4)
       RETURNING *;
     `;
-        const user = await db.one(query, [name, email, username, phone]);
-        return user;
-    } catch (error) {
-        if (error.code === '23505') {
-            throw new Error('Username already exists.');
-        }
-        throw error;
+    const user = await db.one(query, [name, email, username, phone]);
+    return user;
+  } catch (error) {
+    if (error.code === '23505') {
+      throw new Error('Username already exists.');
     }
+    throw error;
+  }
 }
 
 async function getPassHash(username) {
-    try {
-        const result = await db.oneOrNone(
-            'SELECT passhash FROM creds WHERE username = $1',
-            [username]
-        );
+  try {
+    const result = await db.oneOrNone(
+      'SELECT passhash FROM creds WHERE username = $1',
+      [username]
+    );
 
-        if (!result) {
-            // console.log('User not found');
-            return null;
-        }
-
-        return result.passhash;
-    } catch (err) {
-        console.error('Error fetching passhash:', err);
-        throw err;
+    if (!result) {
+      // console.log('User not found');
+      return null;
     }
+
+    return result.passhash;
+  } catch (err) {
+    console.error('Error fetching passhash:', err);
+    throw err;
+  }
 }
 
 async function upsertToken(username, sessionToken, expiry) {
-    const query = `
+  const query = `
     INSERT INTO token (username, session_token, expiry)
     VALUES ($1, $2, $3)
     ON CONFLICT (username)
@@ -65,27 +65,27 @@ async function upsertToken(username, sessionToken, expiry) {
     RETURNING *;
   `;
 
-    try {
-        const token = await db.one(query, [username, sessionToken, expiry]);
-        return token;
-    } catch (error) {
-        throw error;
-    }
+  try {
+    const token = await db.one(query, [username, sessionToken, expiry]);
+    return token;
+  } catch (error) {
+    throw error;
+  }
 }
 
 async function deleteTokenBySession(sessionToken) {
-    const query = `
+  const query = `
     DELETE FROM token
     WHERE session_token = $1
     RETURNING *;
   `;
 
-    try {
-        const result = await db.oneOrNone(query, [sessionToken]);
-        return !!result; // true if deleted, false if no match found
-    } catch (error) {
-        throw error;
-    }
+  try {
+    const result = await db.oneOrNone(query, [sessionToken]);
+    return !!result; // true if deleted, false if no match found
+  } catch (error) {
+    throw error;
+  }
 }
 
 async function getSessionFromToken(sessionToken) {
@@ -103,20 +103,20 @@ async function getSessionFromToken(sessionToken) {
 }
 
 async function getUserFromSession(token) {
-    const query = `
+  const query = `
         SELECT username FROM token
         WHERE session_token = $1;
     `;
-    const result = await db.oneOrNone(query, [token]);
-    return result.username;
+  const result = await db.oneOrNone(query, [token]);
+  return result.username;
 }
 async function getUser(username) {
-    const query = `
+  const query = `
         SELECT * FROM users
         WHERE username = $1;
     `;
-    const result = await db.oneOrNone(query, [token]);
-    return result;
+  const result = await db.oneOrNone(query, [token]);
+  return result;
 }
 async function addAccount(username, balance) {
   const query = `
@@ -155,7 +155,7 @@ async function transferBalance(fromUsername, toUsername, amt) {
     throw new Error('Transfer amount must be greater than zero.');
   }
 
-  if(fromUsername == toUsername){
+  if (fromUsername == toUsername) {
     throw new Error('Cannot transfer money to oneself.');
   }
 
@@ -184,10 +184,33 @@ async function transferBalance(fromUsername, toUsername, amt) {
       [amt, toUsername]
     );
 
-    await logTransaction(fromUsername,toUsername,amt);
+    await logTransaction(fromUsername, toUsername, amt);
 
     return true;
   });
+}
+
+async function fraudCheck(username, amount) {
+  const flags = [];
+  const { count: rapidCount } = await db.one(
+    `SELECT COUNT(*) FROM transactions
+     WHERE from_user = $1 AND time > NOW() - INTERVAL '1 minute'`,
+    [username]
+  );
+  if (parseInt(rapidCount) >= 5) {
+    flags.push('Multiple transfers in under 1 minute');
+  }
+  const { balance: bal } = await db.one(
+    `SELECT balance FROM account WHERE username = $1`,
+    [username]
+  );
+  const percentage = (amount / bal) * 100;
+
+  if (percentage > 50) {
+    flags.push(`Large withdrawal: ${percentage.toFixed(1)}% of balance`);
+  }
+
+  return flags;
 }
 
 async function logTransaction(fromUser, toUser, amount) {
@@ -206,15 +229,16 @@ async function logTransaction(fromUser, toUser, amount) {
 }
 
 module.exports = {
-    getPassHash,
-    addCred,
-    addUser,
-    upsertToken,
-    deleteTokenBySession,
-    getUserFromSession,
-    getSessionFromToken,
-    addAccount,
-    getBalanceByUsername,
-    transferBalance,
-    getUser
+  getPassHash,
+  addCred,
+  addUser,
+  upsertToken,
+  deleteTokenBySession,
+  getUserFromSession,
+  getSessionFromToken,
+  addAccount,
+  getBalanceByUsername,
+  transferBalance,
+  getUser,
+  fraudCheck
 }

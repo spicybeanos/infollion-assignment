@@ -1,5 +1,5 @@
 var express = require('express');
-var { deleteTokenBySession,getPassHash,upsertToken } = require("../database");
+var { deleteTokenBySession, getPassHash, upsertToken } = require("../database");
 
 var router = express.Router();
 // import { getPassHash } from '../database.js'
@@ -11,18 +11,18 @@ const saltRounds = 10;
 router.delete('/', async function (req, res, next) {
   try {
     let auth = req.headers.authorization.split(' ');
-    if(auth.length < 2){
+    if (auth.length < 2) {
       res.status(403).send("");
     }
     const token = auth[1];
-    if(auth == null || auth == undefined){
+    if (auth == null || auth == undefined) {
       res.status(400).send("No token provided.");
       return;
     }
     await deleteTokenBySession(token);
     res.status(200).send("Logged out.")
     return;
-  } 
+  }
   catch (ex) {
     console.log(`Failed to logout : ${ex}`)
     res.status(500).send("Failed to logout.");
@@ -45,9 +45,8 @@ router.post('/', async function (req, res, next) {
     const result = bcrypt.compare(password, hash)
     if (result) {
       const token = require('crypto').randomBytes(32).toString('hex');
-      let expiry = new Date();
       // console.log(`now : ${expiry.toISOString()}`)
-      expiry = new Date(expiry.getTime() + 1000 * 3600 * 3);
+      let expiry = new Date(new Date().getTime() + (3 * 3600 * 1000));
       // console.log(`expiry date time : ${expiry.toISOString()}`)
       await upsertToken(username, token, expiry.toISOString())
 

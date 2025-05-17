@@ -1,6 +1,6 @@
 var express = require('express');
 var router = express.Router();
-var { getUserFromSession,getBalanceByUsername,transferBalance,getUser } = require("../database");
+var { getUserFromSession,getBalanceByUsername,transferBalance,getUser,fraudCheck } = require("../database");
 
 router.post('/:to', async function (req, res, next) {
     try {
@@ -21,6 +21,9 @@ router.post('/:to', async function (req, res, next) {
             res.status(400).send("Insuffcient balance");
             return;
         }
+
+        const flags = await fraudCheck(from,amount);
+
         await transferBalance(from,to,amount);
         res.status(200).send("Transfer complete")
         return;
