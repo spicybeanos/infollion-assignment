@@ -4,6 +4,7 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+var { getUserFromSession } = require('./database.js');
 var { validateToken } = require('./validate.js')
 
 var indexRouter = require('./routes/index');
@@ -12,6 +13,7 @@ var loginRouter = require('./routes/login');
 var signUpRouter = require('./routes/signup');
 var balanceRouter = require('./routes/balance');
 var transferRouter = require('./routes/transfer');
+var adminRouter = require('./routes/admin');
 
 var app = express();
 
@@ -58,6 +60,26 @@ app.use('/transfer', async (req, res, next) => {
   }
   next();
 }, transferRouter);
+
+app.use('/admin', async (req, res, next) => {
+  if (req.headers.authorization === undefined) {
+    res.status(403).send("Unauthorized");
+    return;
+  }
+  const auth = req.headers.authorization.split(' ')[1];
+  const valid = await validateToken(auth);
+
+  if (!valid) {
+    res.status(403).send("Invalid token");
+    return;
+  }
+  const username = await getUserFromSession(auth);
+
+  if(username != process.env.ADMIN){
+    return res.status(403).send("Not admin");
+  }
+  next();
+}, adminRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

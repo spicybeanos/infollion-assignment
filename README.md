@@ -2,7 +2,7 @@
 
 #### Signing up `/signup`
 - POST
-  - Body: `{ user:string, pass:string, email:string, phone:string, name:string }`
+  - Body: `{ user:string, pass:string, email:string, phone:string, name:string, currency?:"INR"|"USD" }`
   - Auth : none
   - This route will create a user in the database with the information mentioned in the body and will create an account with 0 money.
   - Passwords are hashed and salted

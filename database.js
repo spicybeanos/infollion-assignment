@@ -118,15 +118,15 @@ async function getUser(username) {
   const result = await db.oneOrNone(query, [token]);
   return result;
 }
-async function addAccount(username, balance) {
+async function addAccount(username, balance, currency) {
   const query = `
-    INSERT INTO account (username, balance)
-    VALUES ($1, $2)
+    INSERT INTO account (username, balance,currency)
+    VALUES ($1, $2, $3)
     RETURNING *;
   `;
 
   try {
-    const account = await db.one(query, [username, balance]);
+    const account = await db.one(query, [username, balance, currency]);
     return account;
   } catch (error) {
     if (error.code === '23505') {
@@ -150,6 +150,20 @@ async function getBalanceByUsername(username) {
   }
 }
 
+async function getCurrencyByUsername(username) {
+  const query = `
+    SELECT currency FROM account
+    WHERE username = $1;
+  `;
+
+  try {
+    const result = await db.oneOrNone(query, [username]);
+    return result ? result.currency : null;
+  } catch (error) {
+    throw error;
+  }
+}
+
 async function transferBalance(fromUsername, toUsername, amt) {
   if (amt <= 0) {
     throw new Error('Transfer amount must be greater than zero.');
@@ -161,18 +175,30 @@ async function transferBalance(fromUsername, toUsername, amt) {
 
   return db.tx(async t => {
     const sender = await t.oneOrNone(
-      'SELECT balance FROM account WHERE username = $1 FOR UPDATE',
+      'SELECT balance,currency FROM account WHERE username = $1 FOR UPDATE',
       [fromUsername]
     );
 
+
     const receiver = await t.oneOrNone(
-      'SELECT balance FROM account WHERE username = $1 FOR UPDATE',
+      'SELECT balance,currency FROM account WHERE username = $1 FOR UPDATE',
       [toUsername]
     );
 
     if (!sender) throw new Error('Sender account not found.');
     if (!receiver) throw new Error('Receiver account not found.');
     if (sender.balance < amt) throw new Error('Insufficient balance.');
+    
+    let conv = 1;
+
+    if (sender.currency != receiver.currency) {
+      const rate = await t.one(
+        'SELECT rate FROM currency_rates WHERE from_currency = $1 AND to_currency = $2',
+        [sender.currency,receiver.currency]
+      );
+
+      conv = rate.rate;
+    }
 
     await t.none(
       'UPDATE account SET balance = balance - $1 WHERE username = $2',
@@ -181,7 +207,7 @@ async function transferBalance(fromUsername, toUsername, amt) {
 
     await t.none(
       'UPDATE account SET balance = balance + $1 WHERE username = $2',
-      [amt, toUsername]
+      [amt * conv, toUsername]
     );
 
     await logTransaction(fromUsername, toUsername, amt);
@@ -207,7 +233,7 @@ async function fraudCheck(username, amount) {
   const percentage = (amount / bal) * 100;
 
   if (percentage > 50) {
-    flags.push(`Large withdrawal: ${percentage.toFixed(1)}% of balance`);
+    flags.push(`Large withdrawal: ${percentage.toFixed(1)}% of balance (${amount})`);
   }
 
   return flags;
@@ -250,6 +276,44 @@ async function logTransaction(fromUser, toUser, amount) {
   }
 }
 
+const getFlaggedTransactions = async () => {
+  return await db.any(`
+    SELECT
+      *
+    FROM fraud_flags
+  `);
+};
+
+const getAllUserBalances = async () => {
+  return await db.any(`
+    SELECT username, balance, currency FROM account
+    ORDER BY balance DESC;
+  `);
+};
+
+const getTop10UsersByBalance = async () => {
+  return await db.any(`
+    SELECT username, balance, currency
+    FROM account
+    ORDER BY balance DESC
+    LIMIT 10;
+  `);
+};
+
+const getTop10UsersByTransactionVolume = async () => {
+  return await db.any(`
+    SELECT 
+      t."from_user" AS username,
+      SUM(t.amount) AS total_sent,
+      COUNT(*) AS total_transactions
+    FROM transactions t
+    GROUP BY t."from_user"
+    ORDER BY total_sent DESC
+    LIMIT 10;
+  `);
+};
+
+
 module.exports = {
   getPassHash,
   addCred,
@@ -263,5 +327,10 @@ module.exports = {
   transferBalance,
   getUser,
   fraudCheck,
-  logFraud
+  logFraud,
+  getCurrencyByUsername,
+  getFlaggedTransactions,
+  getAllUserBalances,
+  getTop10UsersByBalance,
+  getTop10UsersByTransactionVolume
 }

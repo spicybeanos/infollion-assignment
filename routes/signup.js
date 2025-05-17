@@ -1,6 +1,6 @@
 var express = require('express');
 var router = express.Router();
-var { addCred,addUser,addAccount } = require("../database")
+var { addCred, addUser, addAccount } = require("../database")
 
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
@@ -12,16 +12,17 @@ router.post('/', async function (req, res, next) {
     const email = req.body.email;
     const phone = req.body.phone;
     const name = req.body.name;
+    const currency = req.body.currency == null ? "INR" : req.body.currency;
 
-    if(username == null || pass == null || email == null || phone == null || name == null){
+    if (username == null || pass == null || email == null || phone == null || name == null) {
       res.status(400).send("Fields are empty!");
       return;
     }
 
     const phash = await bcrypt.hash(pass, saltRounds);
-    await addUser(name,email,username,phone);
+    await addUser(name, email, username, phone);
     await addCred(username, phash);
-    await addAccount(username,0)
+    await addAccount(username, 0, currency)
 
     res.send(`Signed up user ${username}`);
     return;

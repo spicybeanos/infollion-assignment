@@ -6,7 +6,9 @@ router.post('/:to', async function (req, res, next) {
     try {
         const token = req.headers.authorization.split(' ')[1];
         const from = await getUserFromSession(token);
+
         const amount = req.body.amount;
+
         const to = req.params.to;
         const bal = await getBalanceByUsername(from);
         if(!bal){

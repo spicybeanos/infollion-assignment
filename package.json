@@ -15,6 +15,7 @@
     "jade": "~1.11.0",
     "morgan": "~1.9.1",
     "pg-promise": "^11.13.0",
-    "spex": "^3.4.1"
+    "spex": "^3.4.1",
+    "swagger-ui-express": "^5.0.1"
   }
 }
