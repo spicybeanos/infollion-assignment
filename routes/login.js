@@ -37,7 +37,7 @@ router.post('/', async function (req, res, next) {
     const hash = await getPassHash(username);
 
     if (hash == null) {
-      res.status(404)
+      res.status(404).
       send("Invalid username");
       return
     }
