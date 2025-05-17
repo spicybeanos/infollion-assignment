@@ -8,6 +8,24 @@ var router = express.Router();
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
 
+/**
+ * @swagger
+ * /login:
+ *   delete:
+ *     summary: Log out user
+ *     description: Logs out a user by deleting the session token.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully logged out
+ *       400:
+ *         description: No token provided
+ *       403:
+ *         description: Unauthorized (invalid or missing token)
+ *       500:
+ *         description: Server error
+ */
 router.delete('/', async function (req, res, next) {
   try {
     let auth = req.headers.authorization.split(' ');
@@ -30,6 +48,48 @@ router.delete('/', async function (req, res, next) {
   }
 })
 
+/**
+ * @swagger
+ * /login:
+ *   post:
+ *     summary: Log in a user
+ *     description: Authenticates a user with username and password. Returns a session token on success.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - user
+ *               - pass
+ *             properties:
+ *               user:
+ *                 type: string
+ *                 description: The user's username
+ *                 example: johndoe
+ *               pass:
+ *                 type: string
+ *                 description: The user's password
+ *                 example: mysecurepassword
+ *     responses:
+ *       200:
+ *         description: Successfully authenticated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 token:
+ *                   type: string
+ *                   description: The session token
+ *       400:
+ *         description: Invalid username or password
+ *       404:
+ *         description: Username not found
+ *       500:
+ *         description: Server error
+ */
 router.post('/', async function (req, res, next) {
   try {
     const username = req.body.user;

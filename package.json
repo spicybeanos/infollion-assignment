@@ -16,6 +16,7 @@
     "morgan": "~1.9.1",
     "pg-promise": "^11.13.0",
     "spex": "^3.4.1",
+    "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1"
   }
 }

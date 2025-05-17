@@ -5,6 +5,63 @@ var { addCred, addUser, addAccount } = require("../database")
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
 
+/**
+ * @swagger
+ * /signup:
+ *   post:
+ *     summary: Register a new user
+ *     description: Creates a new user account, credentials, and associated balance account with an optional currency.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - user
+ *               - pass
+ *               - email
+ *               - phone
+ *               - name
+ *             properties:
+ *               user:
+ *                 type: string
+ *                 description: Desired username
+ *                 example: johndoe
+ *               pass:
+ *                 type: string
+ *                 description: Password (will be hashed)
+ *                 example: strongPassword123
+ *               email:
+ *                 type: string
+ *                 description: Email address
+ *                 example: johndoe@example.com
+ *               phone:
+ *                 type: string
+ *                 description: Phone number
+ *                 example: "+911234567890"
+ *               name:
+ *                 type: string
+ *                 description: Full name
+ *                 example: John Doe
+ *               currency:
+ *                 type: string
+ *                 description: Optional currency code (default is INR)
+ *                 example: USD
+ *     responses:
+ *       200:
+ *         description: Successfully registered user
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: Signed up user johndoe
+ *       400:
+ *         description: Required fields are missing
+ *       500:
+ *         description: Internal server error
+ */
+
 router.post('/', async function (req, res, next) {
   try {
     const username = req.body.user;
