@@ -213,6 +213,28 @@ async function fraudCheck(username, amount) {
   return flags;
 }
 
+async function logFraud(fromUser, fraudList) {
+  const query = `
+    INSERT INTO fraud_flags (username, reason)
+    VALUES ($1, $2)
+    RETURNING *;
+  `;
+
+  let fraud = ''; let idx = 1;
+  fraudList.forEach(fr => {
+    fraud += `${idx})${fr}\n`;
+    idx++;
+  });
+
+  try {
+    await db.one(query, [fromUser, fraud]);
+    return;
+  }
+  catch (ex) {
+    throw ex;
+  }
+}
+
 async function logTransaction(fromUser, toUser, amount) {
   const query = `
     INSERT INTO transactions (from_user, to_user, amount)
@@ -240,5 +262,6 @@ module.exports = {
   getBalanceByUsername,
   transferBalance,
   getUser,
-  fraudCheck
+  fraudCheck,
+  logFraud
 }

@@ -1,6 +1,6 @@
 var express = require('express');
 var router = express.Router();
-var { getUserFromSession,getBalanceByUsername,transferBalance,getUser,fraudCheck } = require("../database");
+var { getUserFromSession,getBalanceByUsername,transferBalance,logFraud,fraudCheck } = require("../database");
 
 router.post('/:to', async function (req, res, next) {
     try {
@@ -23,6 +23,18 @@ router.post('/:to', async function (req, res, next) {
         }
 
         const flags = await fraudCheck(from,amount);
+
+        if(flags.length > 0){
+            await logFraud(from,flags);
+            return res.status(403).send(
+                JSON.stringify(
+                    {
+                        error:"Possible fraud detected!",
+                        reason:flags
+                    }
+                )
+            );
+        }
 
         await transferBalance(from,to,amount);
         res.status(200).send("Transfer complete")
