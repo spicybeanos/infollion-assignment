@@ -16,4 +16,5 @@ resources/.arch-internal-preview.css
 .env
 node_modules/
 ../node_modules/
+node_modules
 /node_modules/
