@@ -56,10 +56,11 @@
 
 #### .env file
 The .env file must havet the following:
-DB_USER=`postgres db user`
-DB_PASS=`postgres db password`
-ADMIN=`admin username`
-
+`
+DB_USER={postgres db user}
+DB_PASS={postgres db password}
+ADMIN={admin username}
+`
 ## Route documentation
 
 #### Signing up `/signup`
