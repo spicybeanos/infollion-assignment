@@ -1,3 +1,65 @@
+## Set-up
+#### Database tables
+- List of relations
+| Schema |     Name     | Type  |  Owner   |
+|--------|--------------|-------|----------|
+| public | account      | table | postgres |
+| public | creds        | table | postgres |
+| public | fraud_flags  | table | postgres |
+| public | token        | table | postgres |
+| public | transactions | table | postgres |
+| public | users        | table | postgres |
+
+- Table "public.account"
+  Column  |       Type        | Collation | Nullable | Default
+----------+-------------------+-----------+----------+---------
+ username | character varying |           | not null |
+ balance  | numeric           |           |          | 0
+
+- Table "public.creds"
+  Column  |       Type        | Collation | Nullable | Default
+----------+-------------------+-----------+----------+---------
+ username | character varying |           | not null |
+ passhash | text              |           | not null |
+
+- Table "public.fraud_flags"
+  Column  |            Type             | Collation | Nullable |                 Default
+----------+-----------------------------+-----------+----------+-----------------------------------------
+ id       | integer                     |           | not null | nextval('fraud_flags_id_seq'::regclass)
+ username | character varying           |           |          |
+ reason   | text                        |           | not null |
+ time     | timestamp without time zone |           |          | CURRENT_TIMESTAMP
+
+- Table "public.token"
+    Column     |            Type             | Collation | Nullable | Default
+---------------+-----------------------------+-----------+----------+---------
+ session_token | text                        |           | not null |
+ username      | character varying           |           |          |
+ expiry        | timestamp without time zone |           | not null |
+
+-  Table "public.transactions"
+  Column   |            Type             | Collation | Nullable |                 Default
+-----------+-----------------------------+-----------+----------+------------------------------------------
+ id        | integer                     |           | not null | nextval('transactions_id_seq'::regclass)
+ time      | timestamp without time zone |           |          | CURRENT_TIMESTAMP
+ from_user | character varying           |           |          |
+ to_user   | character varying           |           |          |
+ amount    | numeric                     |           | not null |
+
+- Table "public.users"
+  Column  |       Type        | Collation | Nullable | Default
+----------+-------------------+-----------+----------+---------
+ name     | character varying |           | not null |
+ email    | character varying |           | not null |
+ username | character varying |           | not null |
+ phone    | character varying |           |          |
+
+#### .env file
+The .env file must havet the following:
+DB_USER=`postgres db user`
+DB_PASS=`postgres db password`
+ADMIN=`admin username`
+
 ## Route documentation
 
 #### Signing up `/signup`
