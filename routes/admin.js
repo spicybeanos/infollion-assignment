@@ -8,9 +8,12 @@ var { getFlaggedTransactions,
 /**
  * @swagger
  * /admin:
+ * 
  *   get:
  *     summary: Admin root endpoint
  *     description: Provides info about available admin subroutes.
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Info message about admin endpoints
@@ -33,8 +36,12 @@ router.get('/', async function (req, res, next) {
     }
 });
 
-/* /admin/flagged:
+/** 
+ * @swagger
+ * /admin/flagged:
  *   get:
+ *     security:
+ *       - bearerAuth: []
  *     summary: Get all flagged transactions
  *     description: Retrieve transactions that have been flagged for fraud.
  *     responses:
@@ -69,8 +76,12 @@ router.get('/flagged', async function (req, res, next) {
     }
 });
 
-/* /admin/agrigate:
+/**
+*  @swagger 
+* /admin/agrigate:
 *   get:
+*     security:
+*       - bearerAuth: []
 *     summary: Get all user balances aggregated
 *     description: Retrieve aggregated balances of all users.
 *     responses:
@@ -101,8 +112,12 @@ router.get('/agrigate', async function (req, res, next) {
     }
 });
 
-/* /admin/top/bal:
+/**
+ *  @swagger
+ * /admin/top/bal:
  *   get:
+ *     security:
+ *       - bearerAuth: []
  *     summary: Get top 10 users by balance
  *     description: Retrieve the top 10 users with the highest account balances.
  *     responses:
@@ -133,8 +148,12 @@ router.get('/top/bal', async function (req, res, next) {
     }
 });
 
-/* /admin/top/transactions:
+/** 
+ * @swagger
+ * /admin/top/transactions:
  *   get:
+ *     security:
+ *       - bearerAuth: []
  *     summary: Get top 10 users by transaction volume
  *     description: Retrieve the top 10 users by total transaction volume.
  *     responses:

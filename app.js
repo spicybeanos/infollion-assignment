@@ -35,6 +35,7 @@ app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/login', loginRouter);
 app.use('/signup', signUpRouter);
+
 app.use('/balance', async (req, res, next) => {
   if (req.headers.authorization === undefined) {
     res.status(403).send("Unauthorized");
@@ -82,6 +83,7 @@ app.use('/admin', async (req, res, next) => {
   if(username != process.env.ADMIN){
     return res.status(403).send("Not admin");
   }
+
   next();
 }, adminRouter);
 
